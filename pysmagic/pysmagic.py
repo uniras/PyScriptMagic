@@ -92,7 +92,8 @@ def iframe_execute(line, cell, viewmode):
             if not isinstance(srcs, list):
                 raise ValueError("Invalid JSON List format for js_src")
             js_srctag = "\n".join([f'    <script src="{src}"></script>' for src in srcs])
-            js_srctag = f"\n{js_srctag}\n"
+            js_srctag = js_srctag.rstrip("\n")
+            js_srctag = f"\n{js_srctag}"
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON List format for js_src")
     else:
@@ -104,9 +105,7 @@ def iframe_execute(line, cell, viewmode):
             json.loads(py_conf)
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON format for py_conf")
-        py_config = ""
-        py_config += "\n" if js_src is None else ""
-        py_config += f"    <{type}-config>{py_conf}</{type}-config>"
+        py_config = f"\n    <{type}-config>{py_conf}</{type}-config>"
     else:
         py_config = ""
 
