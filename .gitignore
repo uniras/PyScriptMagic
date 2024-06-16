@@ -1,5 +1,5 @@
 .venv
 dist/
-pysmagic.egg-info/
+*.egg-info/
 test/
 __pycache__/

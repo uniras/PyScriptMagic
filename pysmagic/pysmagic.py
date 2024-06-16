@@ -104,7 +104,9 @@ def iframe_execute(line, cell, viewmode):
             json.loads(py_conf)
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON format for py_conf")
-        py_config = f"\n    <{type}-config>{py_conf}</{type}-config>"
+        py_config = ""
+        py_config += "\n" if js_src is None else ""
+        py_config += f"    <{type}-config>{py_conf}</{type}-config>"
     else:
         py_config = ""
 

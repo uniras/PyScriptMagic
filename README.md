@@ -36,34 +36,33 @@ display("Hello, world!")
 import pyscript
 import js
 
-js.window.Function("window.p5Canvas = new p5(() => {});").call()
-p5 = getattr(js.window, "p5Canvas")
+def start(p5):
+    x = 100
+    y = 100
 
-x = 100
-y = 100
+    def setup():
+        p5.createCanvas(300, 300)
 
-def setupfunc():
-    p5.createCanvas(300, 300)
+    def draw():
+        nonlocal x, y
+        p5.background(128)
+        p5.fill(255, 0, 0)
+        p5.ellipse(x, y, 50, 50)
 
-def drawfunc():
-    global x, y
-    p5.background(128)
-    p5.fill(255, 0, 0)
-    p5.ellipse(x, y, 50, 50)
+        if p5.keyIsDown(p5.LEFT_ARROW):
+            x -= 1
+        if p5.keyIsDown(p5.RIGHT_ARROW):
+            x += 1
+        if p5.keyIsDown(p5.UP_ARROW):
+            y -= 1
+        if p5.keyIsDown(p5.DOWN_ARROW):
+            y += 1
 
-    if p5.keyIsDown(p5.LEFT_ARROW):
-        x -= 1
-    if p5.keyIsDown(p5.RIGHT_ARROW):
-        x += 1
-    if p5.keyIsDown(p5.UP_ARROW):
-        y -= 1
-    if p5.keyIsDown(p5.DOWN_ARROW):
-        y += 1
+    p5.setup = setup
+    p5.draw = draw
 
-p5.setup = setupfunc
-p5.draw = drawfunc
-
-p5._start()
+p5run = js.window.Function("func", "new p5((p) => {func(p)})")
+p5run(start)
 ```
 
 ### マジックコマンド
