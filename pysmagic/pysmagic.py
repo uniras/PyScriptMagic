@@ -175,7 +175,7 @@ def find_free_port(start=18000, end=18099):
 
 
 # JavaScriptを実行してプロキシURLを取得
-def get_server_url(port, callback):
+def get_server_url(port):
     if is_google_colab():
         from google.colab.output import eval_js  # type: ignore
         url = eval_js(f"google.colab.kernel.proxyPort({port})").strip("/")
