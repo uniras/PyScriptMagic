@@ -152,19 +152,17 @@ def iframe_execute(line, cell, viewmode):
         # サーバーを起動
         port = find_free_port()
 
-        # URL取得後のコールバック関数
-        def url_callback(url):
-            # サーバーを起動
-            start_server(temp_html_path, port)
-
-            # ファイル名をURLに追加
-            htmlurl = url + os.path.basename(temp_html_path)
-
-            # IFrameを使用して表示
-            display.display(display.IFrame(src=htmlurl, width=width, height=height))
-
         # サーバーURLを取得
-        get_server_url(port, url_callback)
+        url = get_server_url(port)
+
+        # サーバーを起動
+        start_server(temp_html_path, port)
+
+        # ファイル名をURLに追加
+        htmlurl = url + "/" + os.path.basename(temp_html_path)
+
+        # IFrameを使用して表示
+        display.display(display.IFrame(src=htmlurl, width=width, height=height))
 
 
 # 18000番台で空いているポート番号を取得
@@ -178,19 +176,13 @@ def find_free_port(start=18000, end=18099):
 
 # JavaScriptを実行してプロキシURLを取得
 def get_server_url(port, callback):
-    if not is_google_colab():
-        callback(f"http://localhost:{port}/")
-        return
+    if is_google_colab():
+        from google.colab.output import eval_js  # type: ignore
+        url = eval_js(f"google.colab.kernel.proxyPort({port})").strip("/")
+    else:
+        url = f"http://localhost:{port}"
 
-    from google.colab import output  # type: ignore  # noqa: F401
-
-    output.register_callback('notebook.getServerUrl', callback)
-    display.display(display.Javascript("""
-        (async () => {
-            const url = await google.colab.kernel.proxyPort(%d, {"cache": true});
-            google.colab.kernel.invokeFunction("notebook.getServerUrl", [url], {});
-        })();
-    """ % port))
+    return url
 
 
 # パスを指定してハンドラを生成するファクトリ関数
