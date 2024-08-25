@@ -146,7 +146,7 @@ def iframe_execute(line, cell, viewmode):
         # 一時ファイルを作成
         basedir = get_basedir()
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, dir=basedir, encoding="utf-8") as f:
-            f.write(base_html, encoding="utf-8")
+            f.write(base_html)
             temp_html_path = f.name
 
         # サーバーを起動
