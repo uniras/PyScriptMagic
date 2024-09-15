@@ -142,7 +142,6 @@ def iframe_execute(line, cell, viewmode):
         display.display(display.Pretty(base_html))
 
     else:
-        pass
         # 一時ファイルを作成
         basedir = get_basedir()
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, dir=basedir, encoding="utf-8") as f:
