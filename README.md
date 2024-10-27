@@ -11,7 +11,7 @@ Jypyter(notebook/lab)・VSCodeまたはGoogle ColabでコードセルのPython�
 コードセルに以下のコードを貼り付けて実行しマジックコマンドを登録してください。カーネルやランタイムを再起動する度に再実行する必要があります。
 
 ```python
-%pip install pysmagic
+%pip install -q -U pysmagic
 from pysmagic import register_pysmagic
 
 register_pysmagic()
