@@ -10,7 +10,7 @@ import IPython.core.magic as magic  # type: ignore  # noqa: F401
 import IPython.display as display  # type: ignore  # noqa: F401
 
 
-PYS_DEFAULT_VERSION = "2024.8.2"
+PYS_DEFAULT_VERSION = "2024.10.1"
 
 
 # Google Colabで実行しているかどうかを判定
