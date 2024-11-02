@@ -22,7 +22,7 @@ register_pysmagic()
 コードセルの冒頭に以下のようにマジックコマンドを記述してください。実行するとアウトプットにiframeが表示されてその中でコードセルのコードがPyScriptで実行されます。
 
 ```python
-%%run_iframe mpy 500 500 white '{}' '[]'
+%%runpys
 
 from pyscript import display
 display("Hello, world!")
@@ -31,12 +31,12 @@ display("Hello, world!")
 以下はブラウザ用JavaScriptライブラリのp5.jsを使って円を描画し、キーボードの矢印キーで移動させるサンプルです。
 
 ```python
-%%run_iframe mpy 500 500 white '{}' '["https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.js"]'
+%%runpys 500 500 white mpy '{}' '["https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.js"]'
 
 import pyscript
 import js
 
-def start(p5):
+def sketch(p5):
     x = 100
     y = 100
 
@@ -61,30 +61,29 @@ def start(p5):
     p5.setup = setup
     p5.draw = draw
 
-p5run = js.window.Function("func", "new p5((p) => {func(p)})")
-p5run(start)
+js.p5.new(sketch)
 ```
 
 ### マジックコマンド
 
-#### %%run_iframe
+#### %%runpys
 
 コードセルのコードをPyScriptを使ってiframe内で実行します。
 
 ```jupyter
-%%run_iframe [type] [width] [height] [background] [py_conf] [js_src] [version]
+%%runpys [width] [height] [background] [py_type] [py_conf] [js_src] [py_ver]
 ```
 
-- type: 実行するPythonの種類。pyまたはmpyを指定します。pyは CPython互換のPyodide、mpyはMicroPytonで実行します。デフォルトはmpyです。
 - width: iframeの幅を指定します。デフォルトは500です。
 - height: iframeの高さを指定します。デフォルトは500です。
 - background: iframeの背景色を指定します。デフォルトはwhiteです。
+- py_type: 実行するPythonの種類。pyまたはmpyを指定します。pyは CPython互換のPyodide、mpyはMicroPytonで実行します。デフォルトはmpyです。
 - py_conf: PyScriptの設定を''で囲んだJSON文字列形式で指定します。デフォルトは{}です。
 - js_src: 外部JavaScriptのURLを''で囲んだ文字列のJSON配列形式で指定します。デフォルトは[]です。
-- version: PyScriptのバージョンを指定します
+- py_ver: PyScriptのバージョンを指定します、Noneを指定するとモジュール内部で設定したデフォルトのバージョンを使用します。デフォルトはNoneです。
 
-#### %%view_iframe
+#### %%genpys
 
 セル内のPythonコードをPyScriptを用いてiframe内で実行するために生成したHTMLを表示するマジックコマンド
 
-引数は%%run_iframeと同じです。
+引数は%%runpysと同じです。
