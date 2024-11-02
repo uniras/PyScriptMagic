@@ -57,8 +57,8 @@ def parse_pys_args(line):
     # 引数のパース
     line_args = shlex.split(line)
     args = {}
-    args["width"] = int(line_args[0]) if len(line_args) > 0 else 500
-    args["height"] = int(line_args[1]) if len(line_args) > 1 else 500
+    args["width"] = line_args[0] if len(line_args) > 0 else "500"
+    args["height"] = line_args[1] if len(line_args) > 1 else "500"
     args["background"] = line_args[2] if len(line_args) > 2 else "white"
     args["py_type"] = line_args[3].lower() if len(line_args) > 3 else "mpy"
     args["py_conf"] = line_args[4] if len(line_args) > 4 and line_args[4] != "{}" else None

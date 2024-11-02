@@ -6,6 +6,7 @@ import subprocess
 import time
 import json
 import IPython.display as display  # type: ignore  # noqa: F401
+from typing import Callable
 
 
 # PyScriptのデフォルトバージョン
@@ -172,16 +173,23 @@ def generate_html(args: dict) -> str:
 
 
 # Pyscriptを実行するHTMLを生成してIFrameで表示
-def run_pyscript(args: dict) -> None:
+def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
     # 引数の取得
     if not isinstance(args, dict):
         raise ValueError("Invalid args type. Use dict type.")
-    width = args.get("width", 500)
-    height = args.get("height", 500)
+    width_str = args.get("width", "500")
+    height_str = args.get("height", "500")
     htmlmode = args.get("htmlmode", False)
 
+    # 幅と高さの取得
+    width = int(width_str) if width_str.isdecimal() else 500
+    height = int(height_str) if height_str.isdecimal() else 500
+
     # HTML生成
-    base_html = generate_html(args)
+    if genfunc is not None:
+        base_html = genfunc(args)
+    else:
+        base_html = generate_html(args)
 
     if htmlmode:
         # HTMLを表示
