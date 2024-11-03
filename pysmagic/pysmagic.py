@@ -60,9 +60,9 @@ def parse_pys_args(line):
     args["width"] = line_args[0] if len(line_args) > 0 else "500"
     args["height"] = line_args[1] if len(line_args) > 1 else "500"
     args["background"] = line_args[2] if len(line_args) > 2 else "white"
-    args["py_type"] = line_args[3].lower() if len(line_args) > 3 else "mpy"
+    args["py_type"] = line_args[3] if len(line_args) > 3 else "mpy"
     args["py_conf"] = line_args[4] if len(line_args) > 4 and line_args[4] != "{}" else None
     args["js_src"] = line_args[5] if len(line_args) > 5 and line_args[5] != "[]" else None
-    args["py_ver"] = line_args[6] if len(line_args) > 6 and line_args[6].lower() != "none" else None
+    args["py_ver"] = line_args[6] if len(line_args) > 6 and line_args[6].lower() != "none" else "none"
 
     return args

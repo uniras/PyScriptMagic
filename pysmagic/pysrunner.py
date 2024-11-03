@@ -73,10 +73,10 @@ def start_server(file_path: str, port: int) -> None:
 # HTMLを生成
 def generate_html(args: dict) -> str:
     # 引数の取得
-    py_type = args.get("py_type", "mpy")
+    py_type = args.get("py_type", "mpy").lower()
     py_script = args.get("py_script", "")
     py_conf = args.get("py_conf", None)
-    py_ver = args.get("py_ver", None)
+    py_ver = args.get("py_ver", "none").lower()
     background = args.get("background", "white")
     js_src = args.get("js_src", None)
     add_src = args.get("add_src", None)
@@ -89,7 +89,7 @@ def generate_html(args: dict) -> str:
         raise ValueError("Invalid type. Use py or mpy")
 
     # バージョンの指定がない場合はデフォルトバージョンを設定
-    if py_ver is None:
+    if py_ver == "none":
         py_ver = PYS_DEFAULT_VERSION
 
     # 外部css要素を生成
@@ -180,10 +180,16 @@ def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
     width_str = args.get("width", "500")
     height_str = args.get("height", "500")
     htmlmode = args.get("htmlmode", False)
+    py_file = args.get("py_file", None)
 
     # 幅と高さの取得
-    width = int(width_str) if width_str.isdecimal() else 500
-    height = int(height_str) if height_str.isdecimal() else 500
+    width = width_str if isinstance(width_str, int) else int(width_str) if isinstance(width_str, str) and width_str.isdecimal() else 500
+    height = height_str if isinstance(height_str, int) else int(height_str) if isinstance(height_str, str) and height_str.isdecimal() else 500
+
+    # Pythonファイルの読み込み
+    if py_file is not None:
+        with open(py_file, "r", encoding="utf-8") as f:
+            args["py_script"] = f.read()
 
     # HTML生成
     if genfunc is not None:
