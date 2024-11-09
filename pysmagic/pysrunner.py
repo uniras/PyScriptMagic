@@ -1,16 +1,16 @@
-import tempfile
 import os
-import socket
-import threading
-import subprocess
+import sys
 import time
 import json
+import socket
+import subprocess
 import IPython.display as display  # type: ignore  # noqa: F401
 from typing import Callable
+from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 
 # PyScriptのデフォルトバージョン
-PYS_DEFAULT_VERSION = "2024.10.1"
+PYS_DEFAULT_VERSION = "2024.10.2"
 
 
 # Google Colabで実行しているかどうかを判定
@@ -53,23 +53,6 @@ def get_server_url(port: int) -> str:
     return url
 
 
-# サーバを起動する関数
-def start_server_func(file_path: str, port: int) -> None:
-    TIMEOUT = 30  # サーバーのタイムアウト（秒）
-    server_process = subprocess.Popen(["python", "-m", "http.server", f"{port}"])
-    time.sleep(TIMEOUT)
-    server_process.terminate()  # プロセスの終了
-    os.remove(file_path)
-
-
-# サーバを別スレッドで起動
-def start_server(file_path: str, port: int) -> None:
-    thread = threading.Thread(target=start_server_func, args=(file_path, port))
-    thread.daemon = True
-    thread.start()
-    time.sleep(1)  # サーバーが起動するまで待つ
-
-
 # HTMLを生成
 def generate_html(args: dict) -> str:
     # 引数の取得
@@ -80,9 +63,9 @@ def generate_html(args: dict) -> str:
     background = args.get("background", "white")
     js_src = args.get("js_src", None)
     add_src = args.get("add_src", None)
-    add_script = args.get("add_script", None)
+    add_script_code = args.get("add_script", None)
     add_css = args.get("add_css", None)
-    add_style = args.get("add_style", None)
+    add_style_code = args.get("add_style", None)
 
     # py_typeのチェック
     if py_type != "py" and py_type != "mpy":
@@ -101,8 +84,8 @@ def generate_html(args: dict) -> str:
         css_srctag = ""
 
     # 追加スタイル要素を生成
-    if add_style is not None and add_style != "":
-        add_style = f"\n    <style>\n{add_style}\n    </style>"
+    if add_style_code is not None and add_style_code != "":
+        add_style = f"\n    <style>\n{add_style_code}\n    </style>"
     else:
         add_style = ""
 
@@ -129,8 +112,8 @@ def generate_html(args: dict) -> str:
         js_srctag = ""
 
     # 追加スクリプト要素を生成
-    if add_script is not None and add_script != "":
-        add_script = f"\n{add_script}"
+    if add_script_code is not None and add_script_code != "":
+        add_script = f"\n{add_script_code}"
     else:
         add_script = ""
 
@@ -172,7 +155,34 @@ def generate_html(args: dict) -> str:
     """.strip()
 
 
-# Pyscriptを実行するHTMLを生成してIFrameで表示
+# サーバを起動する関数
+def start_server(html: str, port: int) -> subprocess.Popen:
+    # このファイルをPythonインタプリタで開いてサーバーを起動
+    pycommand = "python" if sys.platform == "win32" else "python3"
+
+    # Popenで標準入力を使用して実行
+    process = subprocess.Popen(
+        [pycommand, __file__, str(port)],
+        stdin=subprocess.PIPE,
+        text=True,
+        encoding="utf-8"
+    )
+
+    process.stdin.write(html)
+    process.stdin.close()
+
+    # サーバーが起動するまで待機
+    time.sleep(1)
+
+    return process
+
+
+# サーバーを停止する関数
+def stop_server(process: subprocess.Popen) -> None:
+    process.kill()
+
+
+# PyScriptを実行するHTMLを生成してIFrameで表示
 def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
     # 引数の取得
     if not isinstance(args, dict):
@@ -181,6 +191,7 @@ def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
     height_str = args.get("height", "500")
     htmlmode = args.get("htmlmode", False)
     py_file = args.get("py_file", None)
+    dulation = args.get("dulation", 5)
 
     # 幅と高さの取得
     width = width_str if isinstance(width_str, int) else int(width_str) if isinstance(width_str, str) and width_str.isdecimal() else 500
@@ -202,23 +213,66 @@ def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
         display.display(display.Pretty(base_html))
 
     else:
-        # 一時ファイルを作成
-        basedir = get_basedir()
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, dir=basedir, encoding="utf-8") as f:
-            f.write(base_html)
-            temp_html_path = f.name
-
-        # サーバーを起動
+        # 空きポートを取得
         port = find_free_port()
 
         # サーバーURLを取得
         url = get_server_url(port)
 
         # サーバーを起動
-        start_server(temp_html_path, port)
-
-        # ファイル名をURLに追加
-        htmlurl = url + "/" + os.path.basename(temp_html_path)
+        process = start_server(base_html, port)
 
         # IFrameを使用して表示
-        display.display(display.IFrame(src=htmlurl, width=width, height=height))
+        display.display(display.IFrame(src=url + "/", width=width, height=height))
+
+        # 指定秒数待機
+        time.sleep(dulation)
+
+        # サーバーを停止
+        stop_server(process)
+
+
+# このファイルをPythonインタプリタで開いた場合の処理
+def run_main_func(arg: list[str]) -> None:
+    # カスタムハンドラクラス
+    class CustomHandler(SimpleHTTPRequestHandler):
+        def log_message(self, format, *args):
+            # ログ出力を無効化（何も出力しない）
+            pass
+
+        def do_GET(self):
+            if self.path == "/":
+                # ルートパスにアクセスしたときは標準入力で渡されたHTMLを返す
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+
+                self.wfile.write(self.server.pys_file.encode("utf-8"))
+            else:
+                # その他のリクエストは通常のファイルリクエストとして処理
+                super().do_GET()
+
+    # カスタムHTTPServerクラス
+    class CustomHTTPServer(HTTPServer):
+        def __init__(self, server_address, RequestHandlerClass, pys_file):
+            super().__init__(server_address, RequestHandlerClass)
+            self.pys_file = pys_file
+
+    # 引数の取得
+    if not isinstance(arg, list):
+        raise ValueError("Invalid args type. Use list type.")
+
+    port = int(arg[0]) if len(arg) > 0 else 18000
+
+    # 標準入力からHTMLを取得
+    file = sys.stdin.read()
+
+    # カスタムHTTPServerクラスを使用し、引数を渡す
+    server = CustomHTTPServer(('localhost', port), CustomHandler, file)
+
+    # サーバーを起動
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    run_main_func(sys.argv[1:])

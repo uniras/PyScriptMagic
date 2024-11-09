@@ -31,7 +31,7 @@ display("Hello, world!")
 以下はブラウザ用JavaScriptライブラリのp5.jsを使って円を描画し、キーボードの矢印キーで移動させるサンプルです。
 
 ```python
-%%runpys 500 500 white mpy '{}' '["https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.js"]'
+%%runpys 500 500 white mpy '{}' '["https://cdn.jsdelivr.net/npm/p5@1/lib/p5.js"]'
 
 import pyscript
 import js
