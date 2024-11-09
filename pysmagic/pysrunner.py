@@ -241,7 +241,10 @@ def run_main_func(arg: list[str]) -> None:
             pass
 
         def do_GET(self):
-            if self.path == "/":
+            # クエリパラメータを取り除く
+            getpath = self.path.split("?")[0]
+
+            if getpath == "/":
                 # ルートパスにアクセスしたときは標準入力で渡されたHTMLを返す
                 self.send_response(200)
                 self.send_header("Content-type", "text/html")
