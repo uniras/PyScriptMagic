@@ -5,12 +5,22 @@ import json
 import socket
 import subprocess
 import IPython.display as display  # type: ignore  # noqa: F401
+from IPython import get_ipython  # type: ignore
 from typing import Callable
 from http.server import SimpleHTTPRequestHandler, HTTPServer
+from collections.abc import Mapping, Sequence
 
 
 # PyScriptのデフォルトバージョン
-PYS_DEFAULT_VERSION = "2024.10.2"
+__PYS_DEFAULT_VERSION = "2024.10.2"
+
+# 一時サーバーのポート範囲
+__DEFAULT_SERVER_PORT_START = 18000
+__DEFAULT_SERVER_PORT_END = 18099
+
+# デフォルトの画面サイズ
+__DEFAULT_WIDTH = 500
+__DEFAULT_HEIGHT = 500
 
 
 # Google Colabで実行しているかどうかを判定
@@ -33,8 +43,8 @@ def get_basedir() -> str:
         return os.getcwd()
 
 
-# 18000番台で空いているポート番号を取得
-def find_free_port(start: int = 18000, end: int = 18099) -> int:
+# 設定したポート番号内で空いているポート番号を取得
+def find_free_port(start: int = __DEFAULT_SERVER_PORT_START, end: int = __DEFAULT_SERVER_PORT_END) -> int:
     for port in range(start, end):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(('localhost', port)) != 0:
@@ -53,13 +63,44 @@ def get_server_url(port: int) -> str:
     return url
 
 
+# JSONに変換可能かどうかを判定する関数
+def is_json_serializable(value):
+    if isinstance(value, (str, int, float, bool, type(None))):  # 基本型
+        return True
+
+    if isinstance(value, Mapping):  # 辞書型
+        return all(is_json_serializable(k) and is_json_serializable(v) for k, v in value.items())
+
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):  # リストやタプル
+        return all(is_json_serializable(item) for item in value)
+
+    return False  # その他は不可
+
+
+# グローバル変数からJSON変換可能なものだけ取り出す
+def get_serializable_globals():
+    cell_globals = {
+        key: value
+        for key, value in get_ipython().user_ns.items()
+        if not key.startswith("__")  # 特殊変数を除外
+        and not callable(value)  # 関数を除外
+        and not key.startswith("_")  # セルの履歴（_i, _ii など）を除外
+        and not key.startswith("In")
+        and not key.startswith("Out")
+    }
+    return {key: value for key, value in cell_globals.items() if is_json_serializable(value)}
+
+
 # HTMLを生成
 def generate_html(args: dict) -> str:
     # 引数の取得
-    py_type = args.get("py_type", "mpy").lower()
+    width = args.get("width_value", __DEFAULT_WIDTH)
+    height = args.get("height_value", __DEFAULT_HEIGHT)
+    py_type_arg = args.get("py_type", "mpy")
     py_script = args.get("py_script", "")
     py_conf = args.get("py_conf", None)
-    py_ver = args.get("py_ver", "none").lower()
+    py_ver = args.get("py_ver", "none")
+    py_val = args.get("py_val", None)
     background = args.get("background", "white")
     js_src = args.get("js_src", None)
     add_src = args.get("add_src", None)
@@ -68,12 +109,14 @@ def generate_html(args: dict) -> str:
     add_style_code = args.get("add_style", None)
 
     # py_typeのチェック
-    if py_type != "py" and py_type != "mpy":
+    if not isinstance(py_type_arg, str) or (py_type_arg.lower() != "py" and py_type_arg.lower() != "mpy"):
         raise ValueError("Invalid type. Use py or mpy")
+    else:
+        py_type = py_type_arg.lower()
 
     # バージョンの指定がない場合はデフォルトバージョンを設定
-    if py_ver == "none":
-        py_ver = PYS_DEFAULT_VERSION
+    if not isinstance(py_ver, str) or py_ver.lower() == "none":
+        py_ver = __PYS_DEFAULT_VERSION
 
     # 外部css要素を生成
     if add_css is not None and isinstance(add_css, list):
@@ -127,6 +170,20 @@ def generate_html(args: dict) -> str:
     else:
         py_config = ""
 
+    # py-val要素とJSON変換可能なグローバル変数をJSON文字列に変換して生成
+    py_val_base = get_serializable_globals()
+
+    if isinstance(py_val, str) and py_val != "":
+        try:
+            py_val_data = json.loads(py_val)
+            py_val_base.update(py_val_data)
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON format for py_val")
+
+    py_val_base.update({"width": width, "height": height})
+
+    py_val_json = json.dumps(py_val_base)
+
     return f"""
 <!DOCTYPE html>
 <html>
@@ -137,6 +194,7 @@ def generate_html(args: dict) -> str:
     <link rel="stylesheet" href="https://pyscript.net/releases/{py_ver}/core.css" />{css_srctag}{add_style}
     <script type="module" src="https://pyscript.net/releases/{py_ver}/core.js"></script>{js_srctag}
     <script type="module">
+        globalThis.pys = JSON.parse(`{py_val_json}`);
         const loading = document.getElementById('loading');
         addEventListener('{py_type}:ready', () => loading.close());
         loading.showModal();{add_script}
@@ -164,17 +222,26 @@ def start_server(html: str, port: int) -> subprocess.Popen:
     process = subprocess.Popen(
         [pycommand, __file__, str(port)],
         stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
         encoding="utf-8"
     )
 
-    process.stdin.write(html)
-    process.stdin.close()
-
     # サーバーが起動するまで待機
     time.sleep(1)
 
-    return process
+    if process.poll() is None:
+        # サーバー起動に成功したら生成したHTMLを標準入力で渡す
+        process.stdin.write(html)
+        process.stdin.close()
+        return process
+    else:
+        # 起動に失敗したらエラーを表示
+        print("Server start failed. return code:", process.poll())
+        print(process.stdout)
+        print(process.stderr)
+        return None
 
 
 # サーバーを停止する関数
@@ -187,15 +254,17 @@ def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
     # 引数の取得
     if not isinstance(args, dict):
         raise ValueError("Invalid args type. Use dict type.")
-    width_str = args.get("width", "500")
-    height_str = args.get("height", "500")
+    width_str = args.get("width", str(__DEFAULT_WIDTH))
+    height_str = args.get("height", str(__DEFAULT_HEIGHT))
     htmlmode = args.get("htmlmode", False)
     py_file = args.get("py_file", None)
     dulation = args.get("dulation", 5)
 
     # 幅と高さの取得
-    width = width_str if isinstance(width_str, int) else int(width_str) if isinstance(width_str, str) and width_str.isdecimal() else 500
-    height = height_str if isinstance(height_str, int) else int(height_str) if isinstance(height_str, str) and height_str.isdecimal() else 500
+    width = width_str if isinstance(width_str, int) else int(width_str) if isinstance(width_str, str) and width_str.isdecimal() else __DEFAULT_WIDTH
+    height = height_str if isinstance(height_str, int) else int(height_str) if isinstance(height_str, str) and height_str.isdecimal() else __DEFAULT_HEIGHT
+    args["width_value"] = width
+    args["height_value"] = height
 
     # Pythonファイルの読み込み
     if py_file is not None:
@@ -222,14 +291,15 @@ def run_pyscript(args: dict, genfunc: Callable[[dict], str] = None) -> None:
         # サーバーを起動
         process = start_server(base_html, port)
 
-        # IFrameを使用して表示
-        display.display(display.IFrame(src=url + "/", width=width, height=height))
+        if process is not None:
+            # IFrameを使用して表示
+            display.display(display.IFrame(src=url + "/", width=width, height=height))
 
-        # 指定秒数待機
-        time.sleep(dulation)
+            # 指定秒数待機
+            time.sleep(dulation)
 
-        # サーバーを停止
-        stop_server(process)
+            # サーバーを停止
+            stop_server(process)
 
 
 # このファイルをPythonインタプリタで開いた場合の処理
@@ -241,7 +311,7 @@ def run_main_func(arg: list[str]) -> None:
             pass
 
         def do_GET(self):
-            # クエリパラメータを取り除く
+            # クエリパラメータを取り除く(Colab対応)
             getpath = self.path.split("?")[0]
 
             if getpath == "/":
@@ -265,7 +335,7 @@ def run_main_func(arg: list[str]) -> None:
     if not isinstance(arg, list):
         raise ValueError("Invalid args type. Use list type.")
 
-    port = int(arg[0]) if len(arg) > 0 else 18000
+    port = int(arg[0]) if len(arg) > 0 and arg[0].isdecimal() else __DEFAULT_SERVER_PORT_START
 
     # 標準入力からHTMLを取得
     file = sys.stdin.read()
