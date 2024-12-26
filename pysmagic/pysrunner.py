@@ -12,7 +12,7 @@ from collections.abc import Mapping, Sequence
 
 
 # PyScriptのデフォルトバージョン
-__PYS_DEFAULT_VERSION = "2024.10.2"
+__PYS_DEFAULT_VERSION = "2024.11.1"
 
 # 一時サーバーのポート範囲
 __DEFAULT_SERVER_PORT_START = 18000
