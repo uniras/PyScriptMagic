@@ -83,7 +83,7 @@ PyScriptから以下の変数にアクセスできます。
 
 #### %%runpys
 
-コードセルのコードをPyScriptを使ってiframe内で実行します。
+コードセルのコードをPyScriptを使ってiframe内で実行します。別のセルに定義したpys_args変数を使って引数を設定することもできます。
 
 ```jupyter
 %%runpys [width] [height] [background] [py_type] [py_val] [py_conf] [js_src] [py_ver]

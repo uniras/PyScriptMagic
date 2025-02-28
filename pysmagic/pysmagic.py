@@ -1,15 +1,15 @@
 import shlex
-import IPython.core.magic as magic  # type: ignore  # noqa: F401
-from .pysrunner import run_pyscript
+import IPython.core.magic as magic  # type: ignore
+from IPython import get_ipython  # type: ignore
+from .pysrunner import run_pyscript, merge_dict
 
 
 # magic commandを登録する関数
 def register_pysmagic():
-    from IPython import get_ipython  # type: ignore  # noqa: F401
     ipy = get_ipython()
     ipy.register_magic_function(runpys)
     ipy.register_magic_function(genpys)
-    print("Registered PyScript magic commands.")
+    print('Registered PyScript magic commands.')
 
 
 # iframe内でPyScriptを実行するマジックコマンド
@@ -33,8 +33,8 @@ def runpys(line, cell):
     """
     # 引数のパース
     args = parse_pys_args(line)
-    args["py_script"] = cell
-    args["htmlmode"] = False
+    args['py_script'] = cell
+    args['htmlmode'] = False
 
     # PyScriptを実行
     run_pyscript(args)
@@ -47,24 +47,48 @@ def genpys(line, cell):
     """
     # 引数のパース
     args = parse_pys_args(line)
-    args["py_script"] = cell
-    args["htmlmode"] = True
+    args['py_script'] = cell
+    args['htmlmode'] = True
 
     # PyScriptを実行
     run_pyscript(args)
 
 
+def default_args():
+    return {
+        'width': '500',
+        'height': '500',
+        'background': 'white',
+        'py_type': 'mpy',
+        'py_val': None,
+        'py_conf': None,
+        'js_src': None,
+        'py_ver': 'none'
+    }
+
+
 def parse_pys_args(line):
     # 引数のパース
     line_args = shlex.split(line)
-    args = {}
-    args["width"] = line_args[0] if len(line_args) > 0 else "500"
-    args["height"] = line_args[1] if len(line_args) > 1 else "500"
-    args["background"] = line_args[2] if len(line_args) > 2 else "white"
-    args["py_type"] = line_args[3] if len(line_args) > 3 else "mpy"
-    args["py_val"] = line_args[4] if len(line_args) > 4 and line_args[4] != "{}" else None
-    args["py_conf"] = line_args[5] if len(line_args) > 5 and line_args[5] != "{}" else None
-    args["js_src"] = line_args[6] if len(line_args) > 6 and line_args[6] != "[]" else None
-    args["py_ver"] = line_args[7] if len(line_args) > 7 else "none"
+
+    def_args = default_args()
+
+    ipython_user_ns = get_ipython().user_ns
+
+    if len(line_args) == 0:
+        if 'pys_args' in ipython_user_ns.keys() and isinstance(ipython_user_ns['pys_args'], dict):
+            args = merge_dict(def_args, ipython_user_ns['pys_args'])
+        else:
+            args = def_args
+    else:
+        args = {}
+        args['width'] = line_args[0] if len(line_args) > 0 else def_args['width']
+        args['height'] = line_args[1] if len(line_args) > 1 else def_args['height']
+        args['background'] = line_args[2] if len(line_args) > 2 else def_args['background']
+        args['py_type'] = line_args[3] if len(line_args) > 3 else def_args['py_type']
+        args['py_val'] = line_args[4] if len(line_args) > 4 and line_args[4] != '{}' else def_args['py_val']
+        args['py_conf'] = line_args[5] if len(line_args) > 5 and line_args[5] != '{}' else def_args['py_conf']
+        args['js_src'] = line_args[6] if len(line_args) > 6 and line_args[6] != '[]' else def_args['js_src']
+        args['py_ver'] = line_args[7] if len(line_args) > 7 else def_args['py_ver']
 
     return args
