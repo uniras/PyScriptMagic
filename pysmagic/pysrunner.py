@@ -87,6 +87,7 @@ def get_serializable_globals():
         and not key.startswith('_')  # セルの履歴（_i, _ii など）を除外
         and not key.startswith('In')
         and not key.startswith('Out')
+        and not key == 'pys_args'  # pys_argsを除外
     }
 
     # キーが文字列で、値がJSON変換可能なものだけ取り出す
@@ -230,7 +231,7 @@ def generate_html(args: dict) -> str:
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>{js_srctag}
     <script type="module">
         globalThis.pys = JSON.parse(`{py_val_json}`);
-        addEventListener('mpy:ready', () => document.getElementById('loading').style.display = 'none');{add_script}
+        addEventListener('{py_type}:ready', () => document.getElementById('loading').style.display = 'none');{add_script}
     </script>{py_config}
 </head>
 <body style="background:{background};">
