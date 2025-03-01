@@ -235,7 +235,7 @@ def generate_html(args: dict) -> str:
     </script>{py_config}
 </head>
 <body style="background:{background};">
-    <div id="loading" class="ion-text-center ion-justify-content-center ion-align-items-center ion-padding" style="height: 100vh; display: flex;">
+    <div id="loading" class="ion-text-center ion-justify-content-center ion-align-items-center ion-padding" style="color: {background}; filter: invert(100%) grayscale(100%) contrast(100); height: 100vh; display: flex;">
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
     </div>
     <script type="{py_type}">
