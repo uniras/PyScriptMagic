@@ -86,7 +86,7 @@ PyScriptから以下の変数にアクセスできます。
 コードセルのコードをPyScriptを使ってiframe内で実行します。別のセルに定義したpys_args変数を使って引数を設定することもできます。
 
 ```jupyter
-%%runpys [width] [height] [background] [py_type] [py_val] [py_conf] [js_src] [py_ver]
+%%runpys [width] [height] [background] [py_type] [py_val] [py_conf] [js_src] [py_ver] [viewport]
 ```
 
 - width: iframeの幅を指定します。デフォルトは500です。
@@ -97,6 +97,7 @@ PyScriptから以下の変数にアクセスできます。
 - py_conf: PyScriptの設定を''で囲んだJSON文字列形式で指定します。デフォルトは'{}'です。
 - js_src: 外部JavaScriptのURLを''で囲んだ文字列のJSON配列形式で指定します。デフォルトは'[]'です。
 - py_ver: PyScriptのバージョンを指定します、Noneを指定するとモジュール内部で設定したデフォルトのバージョンを使用します。デフォルトはNoneです。
+- viewport: iframeのviewportを指定します。デフォルトは'width=device-width, initial-scale=1.0'です。
 
 #### %%genpys
 

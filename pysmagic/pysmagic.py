@@ -19,7 +19,7 @@ def runpys(line, cell):
     セル内のPythonコードをPyScriptを用いてiframe内で実行するマジックコマンド
 
     Usage:
-        %%runpys [width] [height] [background] [py_type] [py_val] [py_conf] [js_src] [py_ver]
+        %%runpys [width] [height] [background] [py_type] [py_val] [py_conf] [js_src] [py_ver] [viewport]
 
     Args:
         width: iframeの幅を指定します。デフォルトは500です。
@@ -30,6 +30,7 @@ def runpys(line, cell):
         py_conf: PyScriptの設定を''で囲んだJSON文字列形式で指定します。デフォルトは'{}'です。
         js_src: 外部JavaScriptのURLを''で囲んだ文字列のJSON配列形式で指定します。デフォルトは'[]'です。
         py_ver: PyScriptのバージョンを指定します.
+        viewport: viewportの設定を指定します。デフォルトは'width=device-width, initial-scale=1.0'です。
     """
     # 引数のパース
     args = parse_pys_args(line)
@@ -63,7 +64,8 @@ def default_args():
         'py_val': None,
         'py_conf': None,
         'js_src': None,
-        'py_ver': 'none'
+        'py_ver': 'none',
+        'viewport': 'width=device-width, initial-scale=1.0',
     }
 
 
@@ -90,5 +92,6 @@ def parse_pys_args(line):
         args['py_conf'] = line_args[5] if len(line_args) > 5 and line_args[5] != '{}' else def_args['py_conf']
         args['js_src'] = line_args[6] if len(line_args) > 6 and line_args[6] != '[]' else def_args['js_src']
         args['py_ver'] = line_args[7] if len(line_args) > 7 else def_args['py_ver']
+        args['viewport'] = line_args[8] if len(line_args) > 8 else def_args['viewport']
 
     return args

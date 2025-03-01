@@ -4,6 +4,7 @@ import time
 import json
 import socket
 import subprocess
+import textwrap
 import IPython.display as display  # type: ignore  # noqa: F401
 from IPython import get_ipython  # type: ignore
 from typing import Callable
@@ -141,6 +142,7 @@ def generate_html(args: dict) -> str:
     add_script_code = args.get('add_script', None)
     add_css = args.get('add_css', None)
     add_style_code = args.get('add_style', None)
+    viewport = args.get('viewport', 'width=device-width, initial-scale=1.0')
 
     # py_typeのチェック
     if not isinstance(py_type_arg, str) or (py_type_arg.lower() != 'py' and py_type_arg.lower() != 'mpy'):
@@ -162,7 +164,8 @@ def generate_html(args: dict) -> str:
 
     # 追加スタイル要素を生成
     if add_style_code is not None and add_style_code != '':
-        add_style = f"\n    <style>\n{add_style_code}\n    </style>"
+        add_style_str = textwrap.indent(textwrap.dedent(add_style_code), '        ')
+        add_style = f"\n{add_style_str}\n\n"
     else:
         add_style = ''
 
@@ -190,7 +193,8 @@ def generate_html(args: dict) -> str:
 
     # 追加スクリプト要素を生成
     if add_script_code is not None and add_script_code != '':
-        add_script = f"\n{add_script_code}"
+        add_script_str = textwrap.indent(textwrap.dedent(add_script_code), '        ')
+        add_script = f"\n\n{add_script_str}"
     else:
         add_script = ''
 
@@ -200,7 +204,7 @@ def generate_html(args: dict) -> str:
             json.loads(py_conf)
         except json.JSONDecodeError:
             raise ValueError('Invalid JSON format for py_conf')
-        py_config = f"\n    <{py_type}-config>{py_conf}\n    </{py_type}-config>"
+        py_config = f"\n\n    <{py_type}-config>{py_conf}\n    </{py_type}-config>"
     else:
         py_config = ''
 
@@ -223,19 +227,36 @@ def generate_html(args: dict) -> str:
 <html>
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="{viewport}" />
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
-    <link rel="stylesheet" href="https://pyscript.net/releases/{py_ver}/core.css" />{css_srctag}{add_style}
+    <link rel="stylesheet" href="https://pyscript.net/releases/{py_ver}/core.css" />{css_srctag}
+    <style>{add_style}
+        body {{
+            background: {background};
+        }}
+
+        #loading {{
+            color: {background};
+            filter: invert(100%) grayscale(100%) contrast(100);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+    </style>
+
     <script type="module" src="https://pyscript.net/releases/{py_ver}/core.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>{js_srctag}
     <script type="module">
         globalThis.pys = JSON.parse(`{py_val_json}`);
+        document.getElementById('loading').classList.add('ion-text-center', 'ion-justify-content-center', 'ion-align-items-center', 'ion-padding');
         addEventListener('{py_type}:ready', () => document.getElementById('loading').style.display = 'none');{add_script}
     </script>{py_config}
 </head>
 <body style="background:{background};">
-    <div id="loading" class="ion-text-center ion-justify-content-center ion-align-items-center ion-padding" style="color: {background}; filter: invert(100%) grayscale(100%) contrast(100); height: 100vh; display: flex;">
+    <div id="loading">
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
     </div>
     <script type="{py_type}">
