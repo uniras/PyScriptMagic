@@ -226,6 +226,12 @@ def generate_html(args: dict) -> str:
 
     py_val_json = json.dumps(py_val_base)
 
+    # py-gameの場合はキャンバス要素を生成
+    if py_type == 'py-game':
+        py_game_canvas = '\n    <canvas id="canvas"></canvas>'
+    else:
+        py_game_canvas = ''
+
     return f"""
 <!DOCTYPE html>
 <html>
@@ -266,7 +272,7 @@ def generate_html(args: dict) -> str:
 <body style="background:{background};">
     <div id="loading">
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
-    </div>
+    </div>{py_game_canvas}
     <script type="{py_type}"{py_config}>
 {py_script}
     </script>
