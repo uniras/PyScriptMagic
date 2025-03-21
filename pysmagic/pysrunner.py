@@ -207,7 +207,8 @@ def generate_html(args: dict) -> str:
             json.loads(py_conf)
         except json.JSONDecodeError:
             raise ValueError('Invalid JSON format for py_conf')
-        py_config = f" config='{py_conf.replace('\n', '')}'"
+        py_conf_str = py_conf.replace('\r', '').replace('\n', '')
+        py_config = f" config='{py_conf_str}'"
     else:
         py_config = ''
 
