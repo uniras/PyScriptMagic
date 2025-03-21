@@ -13,7 +13,7 @@ from collections.abc import Mapping, Sequence
 
 
 # PyScriptのデフォルトバージョン
-__PYS_DEFAULT_VERSION = '2025.2.4'
+__PYS_DEFAULT_VERSION = '2025.3.1'
 
 # 一時サーバーのポート範囲
 __DEFAULT_SERVER_PORT_START = 18000
@@ -22,6 +22,9 @@ __DEFAULT_SERVER_PORT_END = 18099
 # デフォルトの画面サイズ
 __DEFAULT_WIDTH = 500
 __DEFAULT_HEIGHT = 500
+
+# PyScriptモードのリスト
+__PYS_MODES = ['py', 'mpy', 'py-game']
 
 
 # Google Colabで実行しているかどうかを判定
@@ -145,8 +148,8 @@ def generate_html(args: dict) -> str:
     viewport = args.get('viewport', 'width=device-width, initial-scale=1.0')
 
     # py_typeのチェック
-    if not isinstance(py_type_arg, str) or (py_type_arg.lower() != 'py' and py_type_arg.lower() != 'mpy'):
-        raise ValueError('Invalid type. Use py or mpy')
+    if not isinstance(py_type_arg, str) or (py_type_arg.lower() not in __PYS_MODES):
+        raise ValueError('Invalid type. Use py or mpy or py-game.')
     else:
         py_type = py_type_arg.lower()
 
@@ -198,13 +201,13 @@ def generate_html(args: dict) -> str:
     else:
         add_script = ''
 
-    # py-config要素を生成
-    if py_conf is not None:
+    # py-config属性を生成
+    if py_conf is not None and len(py_conf) > 0:
         try:
             json.loads(py_conf)
         except json.JSONDecodeError:
             raise ValueError('Invalid JSON format for py_conf')
-        py_config = f"\n\n    <{py_type}-config>{py_conf}\n    </{py_type}-config>"
+        py_config = f" config='{py_conf.replace('\n', '')}'"
     else:
         py_config = ''
 
@@ -252,14 +255,18 @@ def generate_html(args: dict) -> str:
     <script type="module">
         globalThis.pys = JSON.parse(`{py_val_json}`);
         document.getElementById('loading').classList.add('ion-text-center', 'ion-justify-content-center', 'ion-align-items-center', 'ion-padding');
-        addEventListener('{py_type}:ready', () => document.getElementById('loading').style.display = 'none');{add_script}
-    </script>{py_config}
+        if ('{py_type}' !== 'py-game') {{
+            addEventListener('{py_type}:ready', () => document.getElementById('loading').style.display = 'none');
+        }} else {{
+            document.getElementById('loading').style.display = 'none';
+        }}{add_script}
+    </script>
 </head>
 <body style="background:{background};">
     <div id="loading">
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
     </div>
-    <script type="{py_type}">
+    <script type="{py_type}"{py_config}>
 {py_script}
     </script>
 </body>

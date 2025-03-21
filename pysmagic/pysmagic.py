@@ -25,7 +25,7 @@ def runpys(line, cell):
         width: iframeの幅を指定します。デフォルトは500です。
         height: iframeの高さを指定します。デフォルトは500です。
         background: iframeの背景色を指定します。デフォルトはwhiteです。
-        py_type: 実行するPythonの種類。pyまたはmpyを指定します。pyはCPython互換のPyodide、mpyはMicroPytonで実行します。デフォルトはmpyです。
+        py_type: 実行するPythonの種類。pyまたはmpyまたはpy-gameを指定します。pyとpy-gameはCPython互換のPyodide、mpyはMicroPytonで実行します。py-gameではゲームライブラリとしてPygame-ceを使えるようになります。デフォルトはmpyです。
         py_val: PyScriptに渡すデータを''で囲んだJSON文字列形式で設定します。デフォルトは'{}'です
         py_conf: PyScriptの設定を''で囲んだJSON文字列形式で指定します。デフォルトは'{}'です。
         js_src: 外部JavaScriptのURLを''で囲んだ文字列のJSON配列形式で指定します。デフォルトは'[]'です。
