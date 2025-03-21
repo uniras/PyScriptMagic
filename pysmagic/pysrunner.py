@@ -202,7 +202,7 @@ def generate_html(args: dict) -> str:
         add_script = ''
 
     # py-config属性を生成
-    if py_conf is not None and len(py_conf) > 0:
+    if py_conf is not None:
         try:
             json.loads(py_conf)
         except json.JSONDecodeError:
