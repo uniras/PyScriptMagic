@@ -261,12 +261,7 @@ def generate_html(args: dict) -> str:
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>{js_srctag}
     <script type="module">
         globalThis.pys = JSON.parse(`{py_val_json}`);
-        document.getElementById('loading').classList.add('ion-text-center', 'ion-justify-content-center', 'ion-align-items-center', 'ion-padding');
-        if ('{py_type}' !== 'py-game') {{
-            addEventListener('{py_type}:ready', () => document.getElementById('loading').style.display = 'none');
-        }} else {{
-            document.getElementById('loading').style.display = 'none';
-        }}{add_script}
+        document.getElementById('loading').classList.add('ion-text-center', 'ion-justify-content-center', 'ion-align-items-center', 'ion-padding');{add_script}
     </script>
 </head>
 <body style="background:{background};">
@@ -274,6 +269,8 @@ def generate_html(args: dict) -> str:
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
     </div>{py_game_canvas}
     <script type="{py_type}"{py_config}>
+import js
+js.document.getElementById('loading').style.display = 'none'
 {py_script}
     </script>
 </body>
