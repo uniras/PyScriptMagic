@@ -232,6 +232,7 @@ def generate_html(args: dict) -> str:
     else:
         py_game_canvas = ''
 
+    # HTMLを生成して返す
     return f"""
 <!DOCTYPE html>
 <html>
@@ -242,10 +243,6 @@ def generate_html(args: dict) -> str:
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
     <link rel="stylesheet" href="https://pyscript.net/releases/{py_ver}/core.css" />{css_srctag}
     <style>{add_style}
-        body {{
-            background: {background};
-        }}
-
         #loading {{
             color: {background};
             filter: invert(100%) grayscale(100%) contrast(100);
@@ -260,22 +257,22 @@ def generate_html(args: dict) -> str:
     <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@latest/dist/ionicons/ionicons.esm.js"></script>{js_srctag}
     <script type="module">
-        globalThis.pys = JSON.parse(`{py_val_json}`);
-        document.getElementById('loading').classList.add('ion-text-center', 'ion-justify-content-center', 'ion-align-items-center', 'ion-padding');{add_script}
+        globalThis.pys = JSON.parse(`{py_val_json}`);{add_script}
     </script>
 </head>
 <body style="background:{background};">
-    <div id="loading">
+    <div id="loading" class="ion-text-center ion-justify-content-center ion-align-items-center ion-padding">
         <ion-spinner name="crescent"></ion-spinner><span>Loading PyScript...</span>
     </div>{py_game_canvas}
     <script type="{py_type}"{py_config}>
 import js
 js.document.getElementById('loading').style.display = 'none'
+
 {py_script}
     </script>
 </body>
 </html>
-    """.strip()
+    """.strip() + '\n'
 
 
 # サーバを起動する関数
